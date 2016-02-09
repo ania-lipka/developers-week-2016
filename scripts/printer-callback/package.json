@@ -1,0 +1,11 @@
+{
+  "name": "handleCallback",
+  "version": "0.0.0",
+  "main": "server.js",
+  "description": "Support for callback",
+  "dependencies": {
+    "body-parser": "~1.9.0",
+    "express": "~4.9.4",
+    "mime": "~1.2.11"
+  }
+}
