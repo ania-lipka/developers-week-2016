@@ -291,20 +291,6 @@ def createJob(printableId, printerId):
 	return response.json(); 
 
 
-def startPrintJob(printerId, jobId):
-
-	url = baseURL + "/print/printers/" + printerId +"/jobs"
-	headers = getBaseHeaders()
-
-   	payLoad  = {  "printer_id" : printerId,
-		          "job_id" : jobId
-               };
-	response = requests.put(url, json = payLoad, headers=headers)
-
-	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
-	return response.json()  
-
-
 def setPrinter(jobId, printerId):
 	
 	url = baseURL + "/print/jobs/" + jobId + "/printer"
@@ -344,6 +330,78 @@ def setJobStatus(jobId, status):
 	print "\n\tRESPONSE: ", response, response.json(); sys.stdout.flush()
 	return waitForTask(response)
 
+
+def startPrintJob(printerId, jobId):
+
+	url = baseURL + "/print/printers/" + printerId +"/jobs"
+	headers = getBaseHeaders()
+
+	payLoad  = {  "printer_id" : printerId,
+		          "job_id" : jobId
+               };
+	response = requests.put(url, json = payLoad, headers=headers)
+
+	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
+	return response.json()  
+
+
+def pausePrintJob(printerId, jobId):
+	
+	url = baseURL + "/print/printers/" + printerId +"/command"
+	headers = getBaseHeaders()
+
+	payLoad  = {  "printer_id" : printerId,
+		          "command" : "pause",
+		          "job_id" : jobId
+               };
+	response = requests.post(url, json = payLoad, headers=headers)
+
+	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
+	return response.json()  
+
+
+def resumePrintJob(printerId, jobId):
+	
+	url = baseURL + "/print/printers/" + printerId +"/command"
+	headers = getBaseHeaders()
+
+	payLoad  = {  "printer_id" : printerId,
+		          "command" : "resume",
+		          "job_id" : jobId
+               };
+	response = requests.post(url, json = payLoad, headers=headers)
+
+	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
+	return response.json()  
+
+
+def cancelPrintJob(printerId, jobId):
+	
+	url = baseURL + "/print/printers/" + printerId +"/command"
+	headers = getBaseHeaders()
+
+	payLoad  = {  "printer_id" : printerId,
+		          "command" : "cancel",
+		          "job_id" : jobId
+               };
+	response = requests.post(url, json = payLoad, headers=headers)
+
+	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
+	return response.json()  
+
+
+def resetPrinter(printerId):
+	
+	url = baseURL + "/print/printers/" + printerId +"/command"
+	headers = getBaseHeaders()
+
+	payLoad  = {  "printer_id" : printerId,
+	              "command" : "reset"
+               };
+	response = requests.post(url, json = payLoad, headers=headers)
+
+	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
+	return response  
 
 
 ### =========================== MGMT =============================
@@ -422,36 +480,6 @@ def getUserPrinter(pId):
     print "\n\tRESPONSE: ", response; sys.stdout.flush();
     return response.json()
 
-
-def cancelPrintJob(jobId, printerId):
-	print "\n### Cancel print job: /print/printers/" + printerId +"/command"; sys.stdout.flush()
-	
-	url = baseURL + "/print/printers/" + printerId +"/command"
-	headers = getBaseHeaders()
-
-   	payLoad  = {  "printer_id" : printerId,
-		      	  "job_id" : jobId,
-	              "command" : "cancel"
-               };
-	response = requests.post(url, json = payLoad, headers=headers)
-
-	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
-	return response  
-
-
-def resetPrinter(printerId):
-	print "Reset printer: print/printers/" + printerId +"/command"; sys.stdout.flush()
-	
-	url = baseURL + "/print/printers/" + printerId +"/command"
-	headers = getBaseHeaders()
-
-   	payLoad  = {  "printer_id" : printerId,
-	              "command" : "reset"
-               };
-	response = requests.post(url, json = payLoad, headers=headers)
-
-	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
-	return response  
 
 
 def listJobsPerPrinter( printerId ):
@@ -534,7 +562,6 @@ def main():
     # Read the command 
 	command = sys.argv[1]
 
-	print "COMMAND:", command; sys.stdout.flush()
 	meshId = None
 	if command in [ 'analyze', 'rename', 'repair', 'visual', 'export', 'createTray']:
 		if len(sys.argv) < 3:
