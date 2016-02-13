@@ -19,11 +19,12 @@ from os.path import splitext, basename
 # Get token url
 # https://api.spark.autodesk.com/api/v1/oauth/authorize?response_type=code&client_id=<your production app key>
 baseURL = 'https://api.spark.autodesk.com/api/v1'
+#baseURL = 'https://api.spark.autodesk.com/api/v1'
 
 ###### Authorization
-token    = "Bearer K9bID8RRJqnxAY7U5UGLVvILsbGQ"	
-#memberId = 20712118   # Sandbox
-memberId = 26777559 #23043771   # Production
+token    = "Bearer O3g2sJVkiSLRhiTxo0D9qqPtXXhB"	
+memberId = 20712118   # Sandbox
+#memberId = 26777559  # Production
 secondary_member_id = 20440631
 
 def getBaseHeaders():
@@ -205,6 +206,16 @@ def exportMesh( meshId ):
     return waitForTask(response)["file_id"]
 
 
+def getTask(taskId):
+	
+	url = baseURL + "/print/tasks/" + taskId
+	headers = getBaseHeaders()
+
+	response = requests.get(url, json = {}, headers=headers)
+
+	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
+	return response  
+
 ##############################
 ## Tray operation API callas
 ##############################
@@ -236,7 +247,7 @@ def prepareTray(trayId):
 	payLoad  = { "id": trayId, "generate_visual": False }
 	response = requests.post(url, json = payLoad, headers=headers)
 
-	print "\n\tRESPONSE: Export Supports: ", response.json(); sys.stdout.flush()
+	print "\n\tRESPONSE: Prepare Tray: ", response, response.json(); sys.stdout.flush()
 	return waitForTask(response)["id"]
 
 
@@ -342,7 +353,7 @@ def startPrintJob(printerId, jobId):
 	response = requests.put(url, json = payLoad, headers=headers)
 
 	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
-	return response.json()  
+	return getPrintJobTask(response) 
 
 
 def pausePrintJob(printerId, jobId):
@@ -357,7 +368,7 @@ def pausePrintJob(printerId, jobId):
 	response = requests.post(url, json = payLoad, headers=headers)
 
 	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
-	return response.json()  
+	return getPrintJobTask(response)
 
 
 def resumePrintJob(printerId, jobId):
@@ -372,7 +383,7 @@ def resumePrintJob(printerId, jobId):
 	response = requests.post(url, json = payLoad, headers=headers)
 
 	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
-	return response.json()  
+	return getPrintJobTask(response)
 
 
 def cancelPrintJob(printerId, jobId):
@@ -387,7 +398,7 @@ def cancelPrintJob(printerId, jobId):
 	response = requests.post(url, json = payLoad, headers=headers)
 
 	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
-	return response.json()  
+	return getPrintJobTask(response) 
 
 
 def resetPrinter(printerId):
@@ -401,7 +412,18 @@ def resetPrinter(printerId):
 	response = requests.post(url, json = payLoad, headers=headers)
 
 	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
-	return response  
+	return getPrintJobTask(response) 
+
+
+def getPrintJobTask(response):
+
+	taskId = response.json()["task_id"]
+
+	url = baseURL + "/print/tasks/" + taskId
+	headers = getBaseHeaders()
+
+	response = requests.get(url, headers=headers)
+	return response.json() if response else {}
 
 
 ### =========================== MGMT =============================
@@ -536,7 +558,7 @@ def getJobStatus( jobId ):
 
 
 def usage():
-	print "Model file parameter is missing."; sys.stdout.flush();
+	print "Incorrect parameters."; sys.stdout.flush();
 	print "\nUsage: python %s  [<command>] [<cmd arguments>]" % sys.argv[0]
 	print "\nCommands: analyze <fileName> | repair <fileName> | rename <fileName> <meshName>| visual <fileName> | export <fileName> | createTray <fileName> | prepare <trayId>| exportSupports <trayId>| printable <printerId> <trayId> | createJob |"
 	print "          start <printerId>| pause <printerId>| resume <printerId>| cancel <printerId>| status <printerId> "
@@ -563,7 +585,7 @@ def main():
 	command = sys.argv[1]
 
 	meshId = None
-	if command in [ 'analyze', 'rename', 'repair', 'visual', 'export', 'createTray']:
+	if command in [ 'analyze', 'rename', 'repair', 'visual', 'export', 'createTray', 'createTray', 'prepareTray', 'createJob']:
 		if len(sys.argv) < 3:
 			usage(); sys.exit(1)
 
@@ -601,7 +623,7 @@ def main():
 		print "\n==> Exported mesh and got fileId", fileIdE
 
 	elif command == "createTray":
-		trayId = createTray( [meshId] )
+		trayId = createTray( [meshId] )['id']
 		print "\n==> Created Tray for Ember with Id", trayId
 
 	elif command == "prepare":
@@ -629,6 +651,7 @@ def main():
 		printerId = sys.argv[3] if len(sys.argv) > 3 else None
 
 		trayId   = createTray( [meshId] )
+		print "\n\n TRAY ID: ", trayId; sys.stdout.flush()
 		trayIdIn = prepareTray(trayId)
 		printableId = generatePrintable(trayIdIn)
 
@@ -637,44 +660,72 @@ def main():
 		print "\n==> Created job with id:", jobId
 
 	elif command == "register":
-		token = sys.argv[3] if len(sys.argv) > 3 else None
+		token = sys.argv[2] if len(sys.argv) == 3 else None
 		if not token: 
-			usage()
-			sys.exit(1)
+			usage(); sys.exit(1)
 
 		codes = registerUserPrinter( token )
 		print "\n==> Printer: ", codes; sys.stdout.flush()
 
 	elif command == "jobStatus":
-		jobId = sys.argv[3] if len(sys.argv) > 3 else None
-		if not token: 
+		jobId = sys.argv[3] if len(sys.argv) == 3 else None
+		if not jobId: 
 			usage(); sys.exit(1)
 
 		response = getJobStatus(jobId)
 		print "\n==> Status: ", response
 
 	elif command == "start":
-		printerId = sys.argv[3] if len(sys.argv) > 3 else None
+		printerId = sys.argv[2] if len(sys.argv) == 4 else None
+		jobId     = sys.argv[3] if len(sys.argv) == 4 else None
+
+		response = startPrintJob(printerId, jobId)
+		print "\n===> Started a job: ", response
 
 	elif command == "pause":
-		printerId = sys.argv[3] if len(sys.argv) > 3 else None
+		printerId = sys.argv[2] if len(sys.argv) == 4 else None
+		jobId     = sys.argv[3] if len(sys.argv) == 4 else None
+		if not printerId or not jobId: 
+			usage(); sys.exit(1)
+
+		response = pausePrintJob(printerId, jobId)
+		print "\n===> Paused a job: ", response
 
 	elif command == "resume":
-		printerId = sys.argv[3] if len(sys.argv) > 3 else None
+		printerId = sys.argv[2] if len(sys.argv) == 4 else None
+		jobId     = sys.argv[3] if len(sys.argv) == 4 else None
+		if not printerId or not jobId: 
+			usage(); sys.exit(1)
+
+		print "\t resume cmd: ", printerId, jobId
+		response = resumePrintJob(printerId, jobId)
+		print "\n==> Response: ", response; sys.stdout.flush()
 
 	elif command == "cancel":
-		printerId = sys.argv[3] if len(sys.argv) > 3 else None
-		jobId = sys.argv[4] if len(sys.argv) > 4 else None
-		response = cancelPrintJob(jobId, printerId)
+		printerId = sys.argv[2] if len(sys.argv) == 4 else None
+		jobId     = sys.argv[3] if len(sys.argv) == 4 else None
+		if not printerId or not jobId: 
+			usage(); sys.exit(1)
+
+		response = cancelPrintJob(printerId, jobId)
 		print "\n==> Response: ", response; sys.stdout.flush()
 
 	elif command == "reset":
-		printerId = sys.argv[3] if len(sys.argv) > 3 else None
+		printerId = sys.argv[2] if len(sys.argv) == 3 else None
+		if not printerId: 
+			usage(); sys.exit(1)
 		response = resetPrinter(printerId)
-		print "\n==> Response: ", response; import sys; sys.stdout.flush()
+		print "\n==> Response: ", response; sys.stdout.flush()
 
 	elif command == "list":
 		result = listPrinters()
+
+	elif command == "task":
+		taskId = sys.argv[2] if len(sys.argv) == 3 else None
+		if not taskId:
+			usage(); sys.exit(1)
+		response = getTask(taskId)
+		print "\n==> Response: ", response; import sys; sys.stdout.flush()
 
 
 if __name__ == "__main__":
