@@ -66,13 +66,12 @@ def getTask(taskId):
 	url = baseURL + "/print/tasks/" + taskId
 	headers = getBaseHeaders()
 
-	maxIterations = 100
-
 	response = requests.get(url, headers=headers)
 	if not response:
 		return null;
 
 	json = response.json()
+	print "\t RESPONSE: ", json; sys.stdout.flush()
 	return json
 
 
@@ -205,16 +204,6 @@ def exportMesh( meshId ):
     print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
     return waitForTask(response)["file_id"]
 
-
-def getTask(taskId):
-	
-	url = baseURL + "/print/tasks/" + taskId
-	headers = getBaseHeaders()
-
-	response = requests.get(url, json = {}, headers=headers)
-
-	print "\n\tRESPONSE: ", response.json(); sys.stdout.flush()
-	return response  
 
 ##############################
 ## Tray operation API callas
@@ -585,20 +574,27 @@ def main():
 	command = sys.argv[1]
 
 	meshId = None
-	if command in [ 'analyze', 'rename', 'repair', 'visual', 'export', 'createTray', 'createTray', 'prepareTray', 'createJob']:
+	if command in [ 'upload', 'import', 'analyze', 'rename', 'repair', 'visual', 'export', 'createTray', 'createTray', 'prepareTray', 'createJob']:
 		if len(sys.argv) < 3:
 			usage(); sys.exit(1)
 
-		# Read the input geometry file (stl, obj, mtl)
+		# Read the input geometry file (stl, obj)
 		fileName = sys.argv[2] 
 		
-	    # Upload a file to Spark Drive 
+		# Upload a file to Spark Drive 
 		modelFileId = uploadToSparkDrive( fileName )
-		print "Uploaded file to Spark Drive and got FileId", modelFileId
+		print "\n==> Uploaded file to Spark Drive and got fileId", modelFileId
+		if command == 'upload':
+			# We are done
+			sys.exit(0)
 
 	    # Import mesh
-		meshNm = "Mesh 1"
-		meshId = importMesh( modelFileId, meshNm )
+		meshName = "Mesh-1"
+		if command == 'import':
+			if len(sys.argv) == 4:
+				meshName = sys.argv[3]
+		meshId = importMesh( modelFileId, meshName )
+		print "\n==> Imported a file and got meshId: ", meshId
 
 	if command == "analyze":
 		result = analyzeMesh( meshId )
@@ -623,7 +619,7 @@ def main():
 		print "\n==> Exported mesh and got fileId", fileIdE
 
 	elif command == "createTray":
-		trayId = createTray( [meshId] )['id']
+		trayId = createTray( [meshId] )
 		print "\n==> Created Tray for Ember with Id", trayId
 
 	elif command == "prepare":
