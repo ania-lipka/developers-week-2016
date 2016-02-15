@@ -22,7 +22,7 @@ baseURL = 'https://api.spark.autodesk.com/api/v1'
 #baseURL = 'https://api.spark.autodesk.com/api/v1'
 
 ###### Authorization
-token    = "Bearer O3g2sJVkiSLRhiTxo0D9qqPtXXhB"	
+token    = "Bearer Jrb2KEEkFc0HGgRZyHFfAGwyj4kd"	
 memberId = 20712118   # Sandbox
 #memberId = 26777559  # Production
 secondary_member_id = 20440631
@@ -623,9 +623,9 @@ def main():
 		print "\n==> Created Tray for Ember with Id", trayId
 
 	elif command == "prepare":
-		trayId    = createTray( [meshId] )
-		trayIdOut = prepareTray(trayId)
-		print "\n==> Prepared Tray with Id", trayId
+		trayId   = createTray( [meshId] )
+		trayIdIn = prepareTray(trayId)
+		print "\n==> Prepared Tray with Id", trayIdIn
 
 	elif command == "printable":
 		trayIdIn  = sys.argv[3] if len(sys.argv) > 3 else None
@@ -647,7 +647,6 @@ def main():
 		printerId = sys.argv[3] if len(sys.argv) > 3 else None
 
 		trayId   = createTray( [meshId] )
-		print "\n\n TRAY ID: ", trayId; sys.stdout.flush()
 		trayIdIn = prepareTray(trayId)
 		printableId = generatePrintable(trayIdIn)
 
